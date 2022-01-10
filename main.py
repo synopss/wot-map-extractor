@@ -33,7 +33,8 @@ def get_json(map_name, map_info):
         data['views'].append({'name': 'Assault', 'url': f'./{as_snake_case(map_name)}/{ASSAULT}.png'})
     if ATT_DEF in map_info:
         data['views'].append({'name': 'Attack / Defense', 'url': f'./{as_snake_case(map_name)}/{ATT_DEF}.png'})
-
+    if GRAND_BATTLE in map_info:
+        data['views'].append({'name': 'Grand Battle', 'url': f'./{as_snake_case(map_name)}/{GRAND_BATTLE}.png'})
     return data
 
 

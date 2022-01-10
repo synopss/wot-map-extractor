@@ -26,7 +26,10 @@ def get_json(map_name, map_info):
     data = {'name': map_name, 'description': map_name, 'cover': f'./{as_snake_case(map_name)}/cover.png',
             'size': map_info['upper_right'][0] - map_info['bottom_left'][0], 'views': []}
     if STANDARD_BATTLE in map_info:
-        data['views'].append({'name': 'Standard battle', 'url': f'./{as_snake_case(map_name)}/{STANDARD_BATTLE}.png'})
+        if len(map_info[STANDARD_BATTLE]) == 0:
+            data['views'].append({'name': 'Steel Hunter', 'url': f'./{as_snake_case(map_name)}/cover.png'})
+        else:
+            data['views'].append({'name': 'Standard battle', 'url': f'./{as_snake_case(map_name)}/{STANDARD_BATTLE}.png'})
     if ENCOUNTER_BATTLE in map_info:
         data['views'].append({'name': 'Encounter battle', 'url': f'./{as_snake_case(map_name)}/{ENCOUNTER_BATTLE}.png'})
     if ASSAULT in map_info:
@@ -35,6 +38,8 @@ def get_json(map_name, map_info):
         data['views'].append({'name': 'Attack / Defense', 'url': f'./{as_snake_case(map_name)}/{ATT_DEF}.png'})
     if GRAND_BATTLE in map_info:
         data['views'].append({'name': 'Grand Battle', 'url': f'./{as_snake_case(map_name)}/{GRAND_BATTLE}.png'})
+    if not data['views']:
+        data['views'].append({'name': 'Frontline', 'url': f'./{as_snake_case(map_name)}/cover.png'})
     return data
 
 

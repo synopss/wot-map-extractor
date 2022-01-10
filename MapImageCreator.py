@@ -48,7 +48,7 @@ class MapImageCreator:
             self.__handle_cover()
 
     def __handle_standard_battle(self):
-        if 'standard_battle' in self.map_info:
+        if 'standard_battle' in self.map_info and len(self.map_info['standard_battle']) != 0:
             green_cap_coord = self.__get_cap_coordinates('standard_battle', 'green_cap')
             red_cap_coord = self.__get_cap_coordinates('standard_battle', 'red_cap')
             green_spawn_coord = self.__get_cap_coordinates('standard_battle', 'green_spawn')

@@ -141,4 +141,3 @@ class MapInfoCreator:
     def __as_parsed_coordinates(self, node):
         string = node.text.strip(' ').split(' ')
         return [round(float(string[0])), round(float(string[1]))]
-

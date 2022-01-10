@@ -17,7 +17,7 @@ def main(argv):
         MapImageCreator(map_code, map_l10n_name, map_info, argv).create_map()
         json_string.append(get_json(map_l10n_name, map_info))
 
-    if '-j' in argv:
+    if '-j' in argv and '-f' in argv:
         with open(f'{DEST_DIR}\\output.json', 'w') as outfile:
             json.dump(json_string, outfile, indent=4)
 

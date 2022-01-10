@@ -1,15 +1,15 @@
 import os
 import zipfile
 
-import xml.etree.ElementTree as ET
-
-import settings
+from settings import *
 from XmlUnpacker import XmlUnpacker
 
 
 class MapInfoCreator:
-    scripts_dir = os.path.join(settings.WOT_PATH_DEFAULT, 'res', 'packages', 'scripts.pkg')
+    scripts_dir = os.path.join(WOT_PATH_DEFAULT, 'res', 'packages', 'scripts.pkg')
     map_info = {}
+    __coordinates = []
+    __team_base_position_node = None
 
     __xmlr = XmlUnpacker()
 
@@ -18,126 +18,115 @@ class MapInfoCreator:
             path = f'scripts/arena_defs/{map_name}.xml'
             with pkg_ref.open(path) as map_conf:
                 nodes = self.__xmlr.read(map_conf)
-                print(ET.tostring(nodes))
                 self.__extract_map_size(nodes)
                 self.__extract_standard_battle(nodes)
                 self.__extract_encounter_battle(nodes)
+                self.__extract_assault(nodes)
+                self.__extract_att_def(nodes)
             return self.map_info
 
     def __extract_map_size(self, nodes):
-        self.map_info['upper_right'] = self.__get_upper_right(nodes)
-        self.map_info['bottom_left'] = self.__get_bottom_left(nodes)
+        self.map_info['upper_right'] = self.get_upper_right(nodes)
+        self.map_info['bottom_left'] = self.get_bottom_left(nodes)
 
     def __extract_standard_battle(self, nodes):
-        if 'standard_battle' in self.map_info:
-            del self.map_info['standard_battle']
-        if self.__get_standard_battle_node(nodes) is not None:
-            self.map_info['standard_battle'] = {}
-            self.__extract_standard_battle_green_cap(nodes)
-            self.__extract_standard_battle_red_cap(nodes)
-            self.__extract_standard_battle_green_spawn(nodes)
-            self.__extract_standard_battle_red_spawn(nodes)
-
-    def __extract_standard_battle_green_cap(self, nodes):
-        green_cap = self.__get_green_point(nodes, 'ctf', 'cap_point')
-        self.__set_game_mode_property('standard_battle', 'green_cap', green_cap)
-
-    def __extract_standard_battle_red_cap(self, nodes):
-        red_cap = self.__get_red_point(nodes, 'ctf', 'cap_point')
-        self.__set_game_mode_property('standard_battle', 'red_cap', red_cap)
-
-    def __get_standard_battle_node(self, nodes):
-        return nodes.find('gameplayTypes').find('ctf')
+        if STANDARD_BATTLE in self.map_info:
+            del self.map_info[STANDARD_BATTLE]
+        if nodes.find('gameplayTypes').find(STANDARD_BATTLE_CODE) is not None:
+            self.map_info[STANDARD_BATTLE] = {}
+            self.__extract_point(nodes, STANDARD_BATTLE_CODE, 'cap_point', 'green_cap')
+            self.__extract_point(nodes, STANDARD_BATTLE_CODE, 'cap_point', 'red_cap')
+            self.__extract_point(nodes, STANDARD_BATTLE_CODE, 'spawn', 'green_spawn')
+            self.__extract_point(nodes, STANDARD_BATTLE_CODE, 'spawn', 'red_spawn')
 
     def __extract_encounter_battle(self, nodes):
-        if 'encounter_battle' in self.map_info:
-            del self.map_info['encounter_battle']
-        if self.__get_encounter_battle_node(nodes) is not None:
-            self.map_info['encounter_battle'] = {}
-            self.__extract_encounter_battle_green_spawns(nodes)
-            self.__extract_encounter_battle_red_spawns(nodes)
-            self.__extract_encounter_cap_point(nodes)
+        if ENCOUNTER_BATTLE in self.map_info:
+            del self.map_info[ENCOUNTER_BATTLE]
+        if nodes.find('gameplayTypes').find(ENCOUNTER_BATTLE_CODE) is not None:
+            self.map_info[ENCOUNTER_BATTLE] = {}
+            self.__extract_point(nodes, ENCOUNTER_BATTLE_CODE, 'spawn', 'green_spawn')
+            self.__extract_point(nodes, ENCOUNTER_BATTLE_CODE, 'spawn', 'red_spawn')
+            self.__extract_point(nodes, ENCOUNTER_BATTLE_CODE, 'cap_point', 'cap_point')
 
-    def __extract_standard_battle_green_spawn(self, nodes):
-        green_spawn = self.__get_green_point(nodes, 'ctf', 'spawn')
-        self.__set_game_mode_property('standard_battle', 'green_spawn', green_spawn)
+    def __extract_assault(self, nodes):
+        if ASSAULT in self.map_info:
+            del self.map_info[ASSAULT]
+        if nodes.find('gameplayTypes').find(ASSAULT_CODE) is not None:
+            self.map_info[ASSAULT] = {}
+            self.__extract_point(nodes, ASSAULT_CODE, 'cap_point', 'green_cap')
+            self.__extract_point(nodes, ASSAULT_CODE, 'spawn', 'green_spawn')
+            self.__extract_point(nodes, ASSAULT_CODE, 'spawn', 'red_spawn')
 
-    def __extract_standard_battle_red_spawn(self, nodes):
-        red_spawn = self.__get_red_point(nodes, 'ctf', 'spawn')
-        self.__set_game_mode_property('standard_battle', 'red_spawn', red_spawn)
+    def __extract_att_def(self, nodes):
+        if ATT_DEF in self.map_info:
+            del self.map_info[ATT_DEF]
+        if nodes.find('gameplayTypes').find(ATT_DEF_CODE) is not None:
+            self.map_info[ATT_DEF] = {}
+            self.__extract_point(nodes, ATT_DEF_CODE, 'cap_point', 'green_cap')
+            self.__extract_point(nodes, ATT_DEF_CODE, 'spawn', 'green_spawn')
+            self.__extract_point(nodes, ATT_DEF_CODE, 'spawn', 'red_spawn')
 
-    def __extract_encounter_battle_green_spawns(self, nodes):
-        green_spawn = self.__get_green_point(nodes, 'domination', 'spawn')
-        self.__set_game_mode_property('encounter_battle', 'green_spawn', green_spawn)
-
-    def __extract_encounter_battle_red_spawns(self, nodes):
-        red_spawn = self.__get_red_point(nodes, 'domination', 'spawn')
-        self.__set_game_mode_property('encounter_battle', 'red_spawn', red_spawn)
-
-    def __extract_encounter_cap_point(self, nodes):
-        cap_point = self.__get_point(nodes, None, 'domination', 'cap_point')
-        self.__set_game_mode_property('encounter_battle', 'cap_point', cap_point)
-
-    def __get_encounter_battle_node(self, nodes):
-        return nodes.find('gameplayTypes').find('domination')
+    def __extract_point(self, nodes, game_mode, point_type, point_team):
+        if point_team.startswith('green'):
+            coordinates = self.__get_coordinates(nodes, 'team1', game_mode, point_type)
+        elif point_team.startswith('red'):
+            coordinates = self.__get_coordinates(nodes, 'team2', game_mode, point_type)
+        elif point_team == 'cap_point':
+            coordinates = self.__get_coordinates(nodes, None, game_mode, point_type)
+        else:
+            return
+        self.__set_game_mode_property(get_game_mode(game_mode), point_team, coordinates)
 
     def __set_game_mode_property(self, game_mode, prop, coordinates):
         if coordinates is not None:
             self.map_info[game_mode][prop] = coordinates
 
-    def __get_green_point(self, nodes, game_mode, point_type):
-        return self.__get_point(nodes, 'team1', game_mode, point_type)
-
-    def __get_red_point(self, nodes, game_mode, point_type):
-        return self.__get_point(nodes, 'team2', game_mode, point_type)
-
-    def __get_point(self, nodes, team, game_mode, point_type):
-        # TODO: need some refactoring
-        if game_mode == 'ctf':
-            if point_type == 'cap_point':
-                team_base_position_node = nodes.find('gameplayTypes').find(game_mode).find('teamBasePositions')
-            elif point_type == 'spawn':
-                team_base_position_node = nodes.find('gameplayTypes').find(game_mode).find('teamSpawnPoints')
-            else:
-                return None
-        elif game_mode == 'domination':
+    def __get_coordinates(self, nodes, team, game_mode, point_type):
+        self.__team_base_position_node = None
+        self.__set_game_mode_coordinates_node(game_mode, STANDARD_BATTLE_CODE, point_type, nodes)
+        self.__set_game_mode_coordinates_node(game_mode, ASSAULT_CODE, point_type, nodes)
+        self.__set_game_mode_coordinates_node(game_mode, ATT_DEF_CODE, point_type, nodes)
+        if game_mode == 'domination':
             if point_type == 'spawn':
-                team_base_position_node = nodes.find('gameplayTypes').find(game_mode).find('teamSpawnPoints')
+                self.__team_base_position_node = nodes.find('gameplayTypes').find(game_mode).find('teamSpawnPoints')
             elif point_type == 'cap_point':
                 return self.__as_parsed_coordinates(nodes.find('gameplayTypes').find(game_mode).find('controlPoint'))
             else:
                 return None
-        else:
-            return None
-        if team_base_position_node is not None:
-            team_node = team_base_position_node.find(team)
+
+        if self.__team_base_position_node is not None:
+            team_node = self.__team_base_position_node.find(team)
             if team_node is not None:
-                position_node = team_node.findall('position')
-                if position_node:
-                    data = []
-                    for position in position_node:
-                        data.append(self.__as_parsed_coordinates(position))
-                    return data
-                position1_node = team_node.findall('position1')
-                if position1_node:
-                    data = []
-                    for position in position1_node:
-                        data.append(self.__as_parsed_coordinates(position))
-                    return data
-                position2_node = team_node.findall('position2')
-                if position2_node:
-                    data = []
-                    for position in position2_node:
-                        data.append(self.__as_parsed_coordinates(position))
-                    return data
+                self.__coordinates = []
+                self.__append_coordinates(team_node, 'position')
+                self.__append_coordinates(team_node, 'position1')
+                self.__append_coordinates(team_node, 'position2')
+                return self.__coordinates
         return None
+
+    def __set_game_mode_coordinates_node(self, game_mode, game_mode_code, point_type, nodes):
+        if game_mode == game_mode_code:
+            if point_type == 'cap_point':
+                self.__team_base_position_node = nodes.find('gameplayTypes').find(game_mode).find('teamBasePositions')
+            elif point_type == 'spawn':
+                self.__team_base_position_node = nodes.find('gameplayTypes').find(game_mode).find('teamSpawnPoints')
+            else:
+                self.__team_base_position_node = None
+
+    def __append_coordinates(self, team_node, point_name):
+        position_node = team_node.findall(point_name)
+        if position_node:
+            for position in position_node:
+                self.__coordinates.append(self.__as_parsed_coordinates(position))
+        return self.__coordinates
+
+    def get_upper_right(self, nodes):
+        return self.__as_parsed_coordinates(nodes.find('boundingBox').find('upperRight'))
+
+    def get_bottom_left(self, nodes):
+        return self.__as_parsed_coordinates(nodes.find('boundingBox').find('bottomLeft'))
 
     def __as_parsed_coordinates(self, node):
         string = node.text.strip(' ').split(' ')
         return [round(float(string[0])), round(float(string[1]))]
 
-    def __get_upper_right(self, nodes):
-        return self.__as_parsed_coordinates(nodes.find('boundingBox').find('upperRight'))
-
-    def __get_bottom_left(self, nodes):
-        return self.__as_parsed_coordinates(nodes.find('boundingBox').find('bottomLeft'))

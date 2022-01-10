@@ -19,7 +19,7 @@ def main(argv):
 
     if '-j' in argv:
         with open(f'{DEST_DIR}\\output.json', 'w') as outfile:
-            json.dump(json_string, outfile)
+            json.dump(json_string, outfile, indent=4)
 
 
 def get_json(map_name, map_info):

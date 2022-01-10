@@ -23,6 +23,7 @@ class MapInfoCreator:
                 self.__extract_encounter_battle(nodes)
                 self.__extract_assault(nodes)
                 self.__extract_att_def(nodes)
+                self.__extract_30v30(nodes)
             return self.map_info
 
     def __extract_map_size(self, nodes):
@@ -66,6 +67,16 @@ class MapInfoCreator:
             self.__extract_point(nodes, ATT_DEF_CODE, 'spawn', 'green_spawn')
             self.__extract_point(nodes, ATT_DEF_CODE, 'spawn', 'red_spawn')
 
+    def __extract_30v30(self, nodes):
+        if GRAND_BATTLE in self.map_info:
+            del self.map_info[GRAND_BATTLE]
+        if nodes.find('gameplayTypes').find(GRAND_BATTLE_CODE) is not None:
+            self.map_info[GRAND_BATTLE] = {}
+            self.__extract_point(nodes, GRAND_BATTLE_CODE, 'cap_point', 'green_cap')
+            self.__extract_point(nodes, GRAND_BATTLE_CODE, 'cap_point', 'red_cap')
+            self.__extract_point(nodes, GRAND_BATTLE_CODE, 'spawn', 'green_spawn')
+            self.__extract_point(nodes, GRAND_BATTLE_CODE, 'spawn', 'red_spawn')
+
     def __extract_point(self, nodes, game_mode, point_type, point_team):
         if point_team.startswith('green'):
             coordinates = self.__get_coordinates(nodes, 'team1', game_mode, point_type)
@@ -86,6 +97,7 @@ class MapInfoCreator:
         self.__set_game_mode_coordinates_node(game_mode, STANDARD_BATTLE_CODE, point_type, nodes)
         self.__set_game_mode_coordinates_node(game_mode, ASSAULT_CODE, point_type, nodes)
         self.__set_game_mode_coordinates_node(game_mode, ATT_DEF_CODE, point_type, nodes)
+        self.__set_game_mode_coordinates_node(game_mode, GRAND_BATTLE_CODE, point_type, nodes)
         if game_mode == 'domination':
             if point_type == 'spawn':
                 self.__team_base_position_node = nodes.find('gameplayTypes').find(game_mode).find('teamSpawnPoints')

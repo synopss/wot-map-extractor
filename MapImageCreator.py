@@ -43,6 +43,9 @@ class MapImageCreator:
         self.__handle_encounter_battle()
         self.__handle_assault()
         self.__handle_att_def()
+        self.__handle_grand_battle()
+        if '-f' in self.argv:
+            self.__handle_cover()
 
     def __handle_standard_battle(self):
         if 'standard_battle' in self.map_info:
@@ -95,7 +98,7 @@ class MapImageCreator:
                         red_cap_position = self.__get_item_position(coord[0], coord[1], red_spawn_offset)
                         image.paste(red_cap, red_cap_position, red_cap)
 
-                image.save(f'{self.__get_saving_path()}{as_snake_case(self.map_name)}_standard_battle.png')
+                image.save(self.__get_saving_path(settings.STANDARD_BATTLE))
 
     def __handle_encounter_battle(self):
         if 'encounter_battle' in self.map_info:
@@ -138,7 +141,7 @@ class MapImageCreator:
                     cap_point_position = self.__get_item_position(cap_point_coord[0], cap_point_coord[1], cap_point_offset)
                     image.paste(cap_point, cap_point_position, cap_point)
 
-                image.save(f'{self.__get_saving_path()}{as_snake_case(self.map_name)}_encounter_battle.png')
+                image.save(self.__get_saving_path(settings.ENCOUNTER_BATTLE))
 
     def __handle_assault(self):
         if 'assault' in self.map_info:
@@ -181,7 +184,7 @@ class MapImageCreator:
                         red_cap_position = self.__get_item_position(coord[0], coord[1], red_spawn_offset)
                         image.paste(red_cap, red_cap_position, red_cap)
 
-                image.save(f'{self.__get_saving_path()}{as_snake_case(self.map_name)}_assault.png')
+                image.save(self.__get_saving_path(settings.ASSAULT))
 
     def __handle_att_def(self):
         if 'att_def' in self.map_info:
@@ -226,15 +229,79 @@ class MapImageCreator:
                         red_cap_position = self.__get_item_position(coord[0], coord[1], red_spawn_offset)
                         image.paste(red_cap, red_cap_position, red_cap)
 
-                image.save(f'{self.__get_saving_path()}{as_snake_case(self.map_name)}_att_def.png')
+                image.save(self.__get_saving_path(settings.ATT_DEF))
 
-    def __get_saving_path(self):
+    def __handle_grand_battle(self):
+        if '30x30' in self.map_info:
+            green_cap_coord = self.__get_cap_coordinates('30x30', 'green_cap')
+            red_cap_coord = self.__get_cap_coordinates('30x30', 'red_cap')
+            green_spawn_coord = self.__get_cap_coordinates('30x30', 'green_spawn')
+            red_spawn_coord = self.__get_cap_coordinates('30x30', 'red_spawn')
+            map_dir = self.__get_map_dir()
+
+            if not os.path.exists(map_dir):
+                return
+            with zipfile.ZipFile(map_dir, 'r') as map_ref:
+                image = self.__get_cap_image(map_ref)
+
+                green_cap_image_size = self.__get_cap_image_size()
+                green_cap_offset = round(green_cap_image_size / 2)
+
+                red_cap_image_size = self.__get_cap_image_size()
+                red_cap_offset = round(red_cap_image_size / 2)
+
+                if green_cap_coord is not None:
+                    green_cap = Image.open('assets/green_cap.png', 'r')
+                    green_cap = green_cap.resize((green_cap_image_size, green_cap_image_size))
+                    green_cap_position = self.__get_item_position(green_cap_coord[0][0], green_cap_coord[0][1], green_cap_offset)
+                    image.paste(green_cap, green_cap_position, green_cap)
+
+                if red_cap_coord is not None:
+                    red_cap = Image.open('assets/red_cap.png', 'r')
+                    red_cap = red_cap.resize((red_cap_image_size, red_cap_image_size))
+                    red_cap_position = self.__get_item_position(red_cap_coord[0][0], red_cap_coord[0][1], red_cap_offset)
+                    image.paste(red_cap, red_cap_position, red_cap)
+
+                green_spawn_image_size = self.__get_spawn_image_size()
+                green_spawn_offset = round(green_spawn_image_size / 2)
+
+                red_spawn_image_size = self.__get_spawn_image_size()
+                red_spawn_offset = round(red_spawn_image_size / 2)
+
+                if green_spawn_coord is not None:
+                    for coord in green_spawn_coord:
+                        green_cap = Image.open('assets/green_spawn.png', 'r')
+                        green_cap = green_cap.resize((green_spawn_image_size, green_spawn_image_size))
+                        green_cap_position = self.__get_item_position(coord[0], coord[1], green_spawn_offset)
+                        image.paste(green_cap, green_cap_position, green_cap)
+
+                if red_spawn_coord is not None:
+                    for coord in red_spawn_coord:
+                        red_cap = Image.open('assets/red_spawn.png', 'r')
+                        red_cap = red_cap.resize((red_spawn_image_size, red_spawn_image_size))
+                        red_cap_position = self.__get_item_position(coord[0], coord[1], red_spawn_offset)
+                        image.paste(red_cap, red_cap_position, red_cap)
+
+                image.save(self.__get_saving_path(settings.GRAND_BATTLE))
+
+    def __handle_cover(self):
+        map_dir = self.__get_map_dir()
+
+        if not os.path.exists(map_dir):
+            return
+        with zipfile.ZipFile(map_dir, 'r') as map_ref:
+            image = self.__get_cap_image(map_ref)
+            image.save(self.__get_saving_path())
+
+    def __get_saving_path(self, game_mode=None):
         if '-f' in self.argv:
             path = f'{settings.DEST_DIR}{as_snake_case(self.map_name)}'
             if not os.path.exists(path):
                 os.mkdir(path)
-            return f'{path}\\'
-        return settings.DEST_DIR
+            if game_mode is None:
+                return f'{path}\\cover.png'
+            return f'{path}\\{game_mode}.png'
+        return f'settings.DEST_DIR\\{as_snake_case(self.map_name)}_{game_mode}.png'
 
     def __get_cap_image(self, map_ref):
         path = f'spaces/{self.map_code}/mmap.dds'

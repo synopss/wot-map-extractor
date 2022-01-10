@@ -5,11 +5,13 @@ STANDARD_BATTLE_CODE = 'ctf'
 ENCOUNTER_BATTLE_CODE = 'domination'
 ASSAULT_CODE = 'assault'
 ATT_DEF_CODE = 'assault2'
+GRAND_BATTLE_CODE = 'ctf30x30'
 
 STANDARD_BATTLE = 'standard_battle'
 ENCOUNTER_BATTLE = 'encounter_battle'
 ASSAULT = 'assault'
 ATT_DEF = 'att_def'
+GRAND_BATTLE = '30x30'
 
 
 def get_game_mode(code):
@@ -21,3 +23,5 @@ def get_game_mode(code):
         return ASSAULT
     if code == ATT_DEF_CODE:
         return ATT_DEF
+    if code == GRAND_BATTLE_CODE:
+        return GRAND_BATTLE

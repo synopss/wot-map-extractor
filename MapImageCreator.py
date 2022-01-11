@@ -3,13 +3,12 @@ import zipfile
 
 from PIL import Image
 
-import settings
+from settings import *
 from utils.string_utils import as_snake_case
 
 
-# TODO: need big refactoring after a lot of copypasta
 class MapImageCreator:
-    pack_dir = os.path.join(settings.WOT_PATH_DEFAULT, 'res', 'packages')
+    pack_dir = os.path.join(WOT_PATH_DEFAULT, 'res', 'packages')
 
     STANDARD_CAP_SIZE = 100
     STANDARD_SPAWN_SIZE = 50
@@ -19,10 +18,16 @@ class MapImageCreator:
     map_code = None
     map_name = None
 
-    upper_right: None
-    bottom_left: None
-    height: None
-    width: None
+    __upper_right: None
+    __bottom_left: None
+    __height: None
+    __width: None
+
+    __map_image = None
+    __cap_image_size = None
+    __cap_image_offset = None
+    __spawn_image_size = None
+    __spawn_image_offset = None
 
     argv = []
 
@@ -30,259 +35,69 @@ class MapImageCreator:
         upper_right = map_info['upper_right']
         bottom_left = map_info['bottom_left']
         self.map_info = map_info
-        self.upper_right = upper_right
-        self.bottom_left = bottom_left
-        self.height = upper_right[1] - bottom_left[1]
-        self.width = upper_right[0] - bottom_left[0]
+        self.__upper_right = upper_right
+        self.__bottom_left = bottom_left
+        self.__height = upper_right[1] - bottom_left[1]
+        self.__width = upper_right[0] - bottom_left[0]
         self.map_code = map_code
         self.map_name = map_name
         self.argv = argv
+        self.__cap_image_size = self.__get_cap_image_size()
+        self.__cap_offset = round(self.__cap_image_size / 2)
+        self.__spawn_image_size = self.__get_spawn_image_size()
+        self.__spawn_offset = round(self.__spawn_image_size / 2)
 
     def create_map(self):
-        self.__handle_standard_battle()
-        self.__handle_encounter_battle()
-        self.__handle_assault()
-        self.__handle_att_def()
-        self.__handle_grand_battle()
+        self.__handle_game_mode(STANDARD_BATTLE)
+        self.__handle_game_mode(ENCOUNTER_BATTLE)
+        self.__handle_game_mode(ASSAULT)
+        self.__handle_game_mode(ATT_DEF)
+        self.__handle_game_mode(GRAND_BATTLE)
         if '-f' in self.argv:
             self.__handle_cover()
 
-    def __handle_standard_battle(self):
-        if 'standard_battle' in self.map_info and len(self.map_info['standard_battle']) != 0:
-            green_cap_coord = self.__get_cap_coordinates('standard_battle', 'green_cap')
-            red_cap_coord = self.__get_cap_coordinates('standard_battle', 'red_cap')
-            green_spawn_coord = self.__get_cap_coordinates('standard_battle', 'green_spawn')
-            red_spawn_coord = self.__get_cap_coordinates('standard_battle', 'red_spawn')
+    def __handle_game_mode(self, game_mode):
+        if game_mode in self.map_info and len(self.map_info[game_mode]) != 0:
+            green_cap_coord = self.__get_cap_coordinates(game_mode, 'green_cap')
+            red_cap_coord = self.__get_cap_coordinates(game_mode, 'red_cap')
+            green_spawn_coord = self.__get_cap_coordinates(game_mode, 'green_spawn')
+            red_spawn_coord = self.__get_cap_coordinates(game_mode, 'red_spawn')
+            cap_point_coord = self.__get_cap_coordinates(game_mode, 'cap_point')
             map_dir = self.__get_map_dir()
 
-            if not os.path.exists(map_dir):
-                return
-            with zipfile.ZipFile(map_dir, 'r') as map_ref:
-                image = self.__get_cap_image(map_ref)
+            self.__create_image(map_dir, game_mode, green_cap_coord, red_cap_coord, green_spawn_coord, red_spawn_coord,
+                                cap_point_coord)
 
-                green_cap_image_size = self.__get_cap_image_size()
-                green_cap_offset = round(green_cap_image_size / 2)
+    def __create_image(self, map_dir, game_mode, green_cap_coord, red_cap_coord, green_spawn_coord, red_spawn_coord,
+                       cap_point_coord):
+        if not os.path.exists(map_dir):
+            return
+        with zipfile.ZipFile(map_dir, 'r') as map_ref:
+            self.map_image = self.__get_cap_image(map_ref)
 
-                red_cap_image_size = self.__get_cap_image_size()
-                red_cap_offset = round(red_cap_image_size / 2)
+            self.__paste_point_on_map('green_cap', green_cap_coord, self.__cap_image_size, self.__cap_offset)
+            self.__paste_point_on_map('red_cap', red_cap_coord, self.__cap_image_size, self.__cap_offset)
+            self.__paste_point_on_map('green_spawn', green_spawn_coord, self.__spawn_image_size, self.__spawn_offset)
+            self.__paste_point_on_map('red_spawn', red_spawn_coord, self.__spawn_image_size, self.__spawn_offset)
+            self.__paste_point_on_map('encounter_cap', cap_point_coord, self.__cap_image_size, self.__cap_offset)
 
-                if green_cap_coord is not None:
-                    green_cap = Image.open('assets/green_cap.png', 'r')
-                    green_cap = green_cap.resize((green_cap_image_size, green_cap_image_size), Image.ANTIALIAS)
-                    green_cap_position = self.__get_item_position(green_cap_coord[0][0], green_cap_coord[0][1], green_cap_offset)
-                    image.paste(green_cap, green_cap_position, green_cap)
+            self.map_image.save(self.__get_saving_path(game_mode), format='PNG', quality=95)
 
-                if red_cap_coord is not None:
-                    red_cap = Image.open('assets/red_cap.png', 'r')
-                    red_cap = red_cap.resize((red_cap_image_size, red_cap_image_size), Image.ANTIALIAS)
-                    red_cap_position = self.__get_item_position(red_cap_coord[0][0], red_cap_coord[0][1], red_cap_offset)
-                    image.paste(red_cap, red_cap_position, red_cap)
-
-                green_spawn_image_size = self.__get_spawn_image_size()
-                green_spawn_offset = round(green_spawn_image_size / 2)
-
-                red_spawn_image_size = self.__get_spawn_image_size()
-                red_spawn_offset = round(red_spawn_image_size / 2)
-
-                if green_spawn_coord is not None:
-                    for coord in green_spawn_coord:
-                        green_cap = Image.open('assets/green_spawn.png', 'r')
-                        green_cap = green_cap.resize((green_spawn_image_size, green_spawn_image_size), Image.ANTIALIAS)
-                        green_cap_position = self.__get_item_position(coord[0], coord[1], green_spawn_offset)
-                        image.paste(green_cap, green_cap_position, green_cap)
-
-                if red_spawn_coord is not None:
-                    for coord in red_spawn_coord:
-                        red_cap = Image.open('assets/red_spawn.png', 'r')
-                        red_cap = red_cap.resize((red_spawn_image_size, red_spawn_image_size), Image.ANTIALIAS)
-                        red_cap_position = self.__get_item_position(coord[0], coord[1], red_spawn_offset)
-                        image.paste(red_cap, red_cap_position, red_cap)
-
-                image.save(self.__get_saving_path(settings.STANDARD_BATTLE), format='PNG', quality=95)
-
-    def __handle_encounter_battle(self):
-        if 'encounter_battle' in self.map_info:
-            green_spawn_coord = self.__get_cap_coordinates('encounter_battle', 'green_spawn')
-            red_spawn_coord = self.__get_cap_coordinates('encounter_battle', 'red_spawn')
-            cap_point_coord = self.__get_cap_coordinates('encounter_battle', 'cap_point')
-            map_dir = self.__get_map_dir()
-
-            if not os.path.exists(map_dir):
-                return
-            with zipfile.ZipFile(map_dir, 'r') as map_ref:
-                image = self.__get_cap_image(map_ref)
-
-                green_spawn_image_size = self.__get_spawn_image_size()
-                green_spawn_offset = round(green_spawn_image_size / 2)
-
-                red_spawn_image_size = self.__get_spawn_image_size()
-                red_spawn_offset = round(red_spawn_image_size / 2)
-
-                if green_spawn_coord is not None:
-                    for coord in green_spawn_coord:
-                        green_cap = Image.open('assets/green_spawn.png', 'r')
-                        green_cap = green_cap.resize((green_spawn_image_size, green_spawn_image_size), Image.ANTIALIAS)
-                        green_cap_position = self.__get_item_position(coord[0], coord[1], green_spawn_offset)
-                        image.paste(green_cap, green_cap_position, green_cap)
-
-                if red_spawn_coord is not None:
-                    for coord in red_spawn_coord:
-                        red_cap = Image.open('assets/red_spawn.png', 'r')
-                        red_cap = red_cap.resize((red_spawn_image_size, red_spawn_image_size), Image.ANTIALIAS)
-                        red_cap_position = self.__get_item_position(coord[0], coord[1], red_spawn_offset)
-                        image.paste(red_cap, red_cap_position, red_cap)
-
-                cap_point_image_size = self.__get_cap_image_size()
-                cap_point_offset = round(cap_point_image_size / 2)
-
-                if cap_point_coord is not None:
-                    cap_point = Image.open('assets/encounter_cap.png', 'r')
-                    cap_point = cap_point.resize((cap_point_image_size, cap_point_image_size), Image.ANTIALIAS)
-                    cap_point_position = self.__get_item_position(cap_point_coord[0], cap_point_coord[1], cap_point_offset)
-                    image.paste(cap_point, cap_point_position, cap_point)
-
-                image.save(self.__get_saving_path(settings.ENCOUNTER_BATTLE), format='PNG', quality=95)
-
-    def __handle_assault(self):
-        if 'assault' in self.map_info:
-            green_cap_coord = self.__get_cap_coordinates('assault', 'green_cap')
-            green_spawn_coord = self.__get_cap_coordinates('assault', 'green_spawn')
-            red_spawn_coord = self.__get_cap_coordinates('assault', 'red_spawn')
-            map_dir = self.__get_map_dir()
-
-            if not os.path.exists(map_dir):
-                return
-            with zipfile.ZipFile(map_dir, 'r') as map_ref:
-                image = self.__get_cap_image(map_ref)
-
-                green_cap_image_size = self.__get_cap_image_size()
-                green_cap_offset = round(green_cap_image_size / 2)
-
-                if green_cap_coord is not None:
-                    green_cap = Image.open('assets/green_cap.png', 'r')
-                    green_cap = green_cap.resize((green_cap_image_size, green_cap_image_size), Image.ANTIALIAS)
-                    green_cap_position = self.__get_item_position(green_cap_coord[0][0], green_cap_coord[0][1], green_cap_offset)
-                    image.paste(green_cap, green_cap_position, green_cap)
-
-                green_spawn_image_size = self.__get_spawn_image_size()
-                green_spawn_offset = round(green_spawn_image_size / 2)
-
-                red_spawn_image_size = self.__get_spawn_image_size()
-                red_spawn_offset = round(red_spawn_image_size / 2)
-
-                if green_spawn_coord is not None:
-                    for coord in green_spawn_coord:
-                        green_cap = Image.open('assets/green_spawn.png', 'r')
-                        green_cap = green_cap.resize((green_spawn_image_size, green_spawn_image_size), Image.ANTIALIAS)
-                        green_cap_position = self.__get_item_position(coord[0], coord[1], green_spawn_offset)
-                        image.paste(green_cap, green_cap_position, green_cap)
-
-                if red_spawn_coord is not None:
-                    for coord in red_spawn_coord:
-                        red_cap = Image.open('assets/red_spawn.png', 'r')
-                        red_cap = red_cap.resize((red_spawn_image_size, red_spawn_image_size), Image.ANTIALIAS)
-                        red_cap_position = self.__get_item_position(coord[0], coord[1], red_spawn_offset)
-                        image.paste(red_cap, red_cap_position, red_cap)
-
-                image.save(self.__get_saving_path(settings.ASSAULT), format='PNG', quality=95)
-
-    def __handle_att_def(self):
-        if 'att_def' in self.map_info:
-            green_cap_coord = self.__get_cap_coordinates('att_def', 'green_cap')
-            green_spawn_coord = self.__get_cap_coordinates('att_def', 'green_spawn')
-            red_spawn_coord = self.__get_cap_coordinates('att_def', 'red_spawn')
-            map_dir = self.__get_map_dir()
-
-            if not os.path.exists(map_dir):
-                return
-            with zipfile.ZipFile(map_dir, 'r') as map_ref:
-                image = self.__get_cap_image(map_ref)
-
-                green_cap_image_size = self.__get_cap_image_size()
-                green_cap_offset = round(green_cap_image_size / 2)
-
-                if green_cap_coord is not None:
-                    for index, coord in enumerate(green_cap_coord):
-                        cap_number = '' if index == 0 else '2'
-                        green_cap = Image.open(f'assets/green_cap{cap_number}.png', 'r')
-                        green_cap = green_cap.resize((green_cap_image_size, green_cap_image_size), Image.ANTIALIAS)
-                        green_cap_position = self.__get_item_position(coord[0], coord[1], green_cap_offset)
-                        image.paste(green_cap, green_cap_position, green_cap)
-
-                green_spawn_image_size = self.__get_spawn_image_size()
-                green_spawn_offset = round(green_spawn_image_size / 2)
-
-                red_spawn_image_size = self.__get_spawn_image_size()
-                red_spawn_offset = round(red_spawn_image_size / 2)
-
-                if green_spawn_coord is not None:
-                    for coord in green_spawn_coord:
-                        green_cap = Image.open('assets/green_spawn.png', 'r')
-                        green_cap = green_cap.resize((green_spawn_image_size, green_spawn_image_size), Image.ANTIALIAS)
-                        green_cap_position = self.__get_item_position(coord[0], coord[1], green_spawn_offset)
-                        image.paste(green_cap, green_cap_position, green_cap)
-
-                if red_spawn_coord is not None:
-                    for coord in red_spawn_coord:
-                        red_cap = Image.open('assets/red_spawn.png', 'r')
-                        red_cap = red_cap.resize((red_spawn_image_size, red_spawn_image_size), Image.ANTIALIAS)
-                        red_cap_position = self.__get_item_position(coord[0], coord[1], red_spawn_offset)
-                        image.paste(red_cap, red_cap_position, red_cap)
-
-                image.save(self.__get_saving_path(settings.ATT_DEF), format='PNG', quality=95)
-
-    def __handle_grand_battle(self):
-        if '30x30' in self.map_info:
-            green_cap_coord = self.__get_cap_coordinates('30x30', 'green_cap')
-            red_cap_coord = self.__get_cap_coordinates('30x30', 'red_cap')
-            green_spawn_coord = self.__get_cap_coordinates('30x30', 'green_spawn')
-            red_spawn_coord = self.__get_cap_coordinates('30x30', 'red_spawn')
-            map_dir = self.__get_map_dir()
-
-            if not os.path.exists(map_dir):
-                return
-            with zipfile.ZipFile(map_dir, 'r') as map_ref:
-                image = self.__get_cap_image(map_ref)
-
-                green_cap_image_size = self.__get_cap_image_size()
-                green_cap_offset = round(green_cap_image_size / 2)
-
-                red_cap_image_size = self.__get_cap_image_size()
-                red_cap_offset = round(red_cap_image_size / 2)
-
-                if green_cap_coord is not None:
-                    green_cap = Image.open('assets/green_cap.png', 'r')
-                    green_cap = green_cap.resize((green_cap_image_size, green_cap_image_size), Image.ANTIALIAS)
-                    green_cap_position = self.__get_item_position(green_cap_coord[0][0], green_cap_coord[0][1], green_cap_offset)
-                    image.paste(green_cap, green_cap_position, green_cap)
-
-                if red_cap_coord is not None:
-                    red_cap = Image.open('assets/red_cap.png', 'r')
-                    red_cap = red_cap.resize((red_cap_image_size, red_cap_image_size), Image.ANTIALIAS)
-                    red_cap_position = self.__get_item_position(red_cap_coord[0][0], red_cap_coord[0][1], red_cap_offset)
-                    image.paste(red_cap, red_cap_position, red_cap)
-
-                green_spawn_image_size = self.__get_spawn_image_size()
-                green_spawn_offset = round(green_spawn_image_size / 2)
-
-                red_spawn_image_size = self.__get_spawn_image_size()
-                red_spawn_offset = round(red_spawn_image_size / 2)
-
-                if green_spawn_coord is not None:
-                    for coord in green_spawn_coord:
-                        green_cap = Image.open('assets/green_spawn.png', 'r')
-                        green_cap = green_cap.resize((green_spawn_image_size, green_spawn_image_size), Image.ANTIALIAS)
-                        green_cap_position = self.__get_item_position(coord[0], coord[1], green_spawn_offset)
-                        image.paste(green_cap, green_cap_position, green_cap)
-
-                if red_spawn_coord is not None:
-                    for coord in red_spawn_coord:
-                        red_cap = Image.open('assets/red_spawn.png', 'r')
-                        red_cap = red_cap.resize((red_spawn_image_size, red_spawn_image_size), Image.ANTIALIAS)
-                        red_cap_position = self.__get_item_position(coord[0], coord[1], red_spawn_offset)
-                        image.paste(red_cap, red_cap_position, red_cap)
-
-                image.save(self.__get_saving_path(settings.GRAND_BATTLE), format='PNG', quality=95)
+    def __paste_point_on_map(self, asset_name, coordinates, point_image_size, point_image_offset):
+        if asset_name != 'encounter_cap':
+            if coordinates is not None:
+                for index, coord in enumerate(coordinates):
+                    cap_number = ('' if index == 0 else '2') if asset_name == 'green_cap' else ''
+                    point = Image.open(f'assets/{asset_name}{cap_number}.png', 'r')
+                    point = point.resize((point_image_size, point_image_size), Image.ANTIALIAS)
+                    point_position = self.__get_point_position(coord[0], coord[1], point_image_offset)
+                    self.map_image.paste(point, point_position, point)
+        else:
+            if coordinates is not None:
+                point = Image.open(f'assets/{asset_name}.png', 'r')
+                point = point.resize((point_image_size, point_image_size), Image.ANTIALIAS)
+                point_position = self.__get_point_position(coordinates[0], coordinates[1], point_image_offset)
+                self.map_image.paste(point, point_position, point)
 
     def __handle_cover(self):
         map_dir = self.__get_map_dir()
@@ -295,7 +110,7 @@ class MapImageCreator:
 
     def __get_saving_path(self, game_mode=None):
         if '-f' in self.argv:
-            path = f'{settings.DEST_DIR}{as_snake_case(self.map_name)}'
+            path = f'{DEST_DIR}{as_snake_case(self.map_name)}'
             if not os.path.exists(path):
                 os.mkdir(path)
             if game_mode is None:
@@ -308,25 +123,20 @@ class MapImageCreator:
         img_bytes = map_ref.open(path)
         return Image.open(img_bytes)
 
-    def __get_image_size(self, image):
-        with image as img:
-            width, height = img.size
-        return width, height
-
     def __get_cap_image_size(self):
-        return round(self.MAP_IMAGE_SIZE / self.height * self.STANDARD_CAP_SIZE)
+        return round(self.MAP_IMAGE_SIZE / self.__height * self.STANDARD_CAP_SIZE)
 
     def __get_spawn_image_size(self):
-        return round(self.MAP_IMAGE_SIZE / self.height * self.STANDARD_SPAWN_SIZE)
+        return round(self.MAP_IMAGE_SIZE / self.__height * self.STANDARD_SPAWN_SIZE)
 
     def __get_cap_coordinates(self, game_mode, team_cap):
         if game_mode in self.map_info and team_cap in self.map_info[game_mode]:
             return self.map_info[game_mode][team_cap]
         return None
 
-    def __get_item_position(self, x, y, cap_offset):
-        new_x = ((x - self.bottom_left[0]) / self.width) * self.MAP_IMAGE_SIZE - cap_offset
-        new_y = (1 - ((y - self.bottom_left[1]) / self.height)) * self.MAP_IMAGE_SIZE - cap_offset
+    def __get_point_position(self, x, y, cap_offset):
+        new_x = ((x - self.__bottom_left[0]) / self.__width) * self.MAP_IMAGE_SIZE - cap_offset
+        new_y = (1 - ((y - self.__bottom_left[1]) / self.__height)) * self.MAP_IMAGE_SIZE - cap_offset
         return round(new_x), round(new_y)
 
     def __get_map_dir(self):

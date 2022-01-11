@@ -1,5 +1,5 @@
 WOT_PATH_DEFAULT = 'C:\\Games\\World_of_Tanks'
-DEST_DIR = 'C:\\Users\\Thomas\\Desktop\\test\\'
+DEST_DIR = 'C:\\Destination\\Folder\\'
 
 STANDARD_BATTLE_CODE = 'ctf'
 ENCOUNTER_BATTLE_CODE = 'domination'

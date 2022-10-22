@@ -3,7 +3,7 @@ import sys
 
 from MapImageCreator import MapImageCreator
 from MapInfoCreator import MapInfoCreator
-from settings import *
+from settings import DEST_DIR, STANDARD_BATTLE, ENCOUNTER_BATTLE, ASSAULT, ATT_DEF, GRAND_BATTLE
 from utils.maps_utils import load_maps_dictionary
 from utils.string_utils import as_snake_case
 

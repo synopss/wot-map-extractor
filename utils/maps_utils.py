@@ -35,11 +35,11 @@ def load_maps_dictionary():
         raise FileNotFoundError(f"Failed to find package '{package_file}'")
 
     zfile = zipfile.ZipFile(package)
-    file = '_list_.xml'
-    file_path = find_file_handle(zfile, f'scripts/arena_defs/{file}')
+    file_name = '_list_.xml'
+    file_path = find_file_handle(zfile, f'scripts/arena_defs/{file_name}')
 
     if file_path is None:
-        raise FileNotFoundError(f"Failed to find open '{file}'")
+        raise FileNotFoundError(f"Failed to find open '{file_name}'")
 
     with zfile.open(file_path, 'r') as f:
         xmlr = XmlUnpacker()

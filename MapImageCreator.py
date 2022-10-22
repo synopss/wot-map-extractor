@@ -3,7 +3,7 @@ import zipfile
 
 from PIL import Image
 
-from settings import *
+from settings import WOT_PATH_DEFAULT, STANDARD_BATTLE, ENCOUNTER_BATTLE, ASSAULT, ATT_DEF, GRAND_BATTLE, DEST_DIR
 from utils.string_utils import as_snake_case
 
 
@@ -18,16 +18,12 @@ class MapImageCreator:
     map_code = None
     map_name = None
 
-    __upper_right: None
     __bottom_left: None
     __height: None
     __width: None
 
-    __map_image = None
     __cap_image_size = None
-    __cap_image_offset = None
     __spawn_image_size = None
-    __spawn_image_offset = None
 
     argv = []
 
@@ -35,7 +31,6 @@ class MapImageCreator:
         upper_right = map_info['upper_right']
         bottom_left = map_info['bottom_left']
         self.map_info = map_info
-        self.__upper_right = upper_right
         self.__bottom_left = bottom_left
         self.__height = upper_right[1] - bottom_left[1]
         self.__width = upper_right[0] - bottom_left[0]

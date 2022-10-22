@@ -1,8 +1,9 @@
 import os
 import zipfile
 
-from settings import *
 from XmlUnpacker import XmlUnpacker
+from settings import STANDARD_BATTLE, WOT_PATH_DEFAULT, STANDARD_BATTLE_CODE, ENCOUNTER_BATTLE_CODE, ENCOUNTER_BATTLE, \
+    ASSAULT_CODE, ASSAULT, ATT_DEF, ATT_DEF_CODE, GRAND_BATTLE, GRAND_BATTLE_CODE, get_game_mode
 
 
 class MapInfoCreator:

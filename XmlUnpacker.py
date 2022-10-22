@@ -42,13 +42,12 @@ class XmlUnpacker:
 
     def __read_element_descriptors(self, count):
         descriptors = []
-        for i in range(0, count):
+        for _ in range(0, count):
             data = self.stream.read(2)
             if data:
                 name_index = unpack('<H', data)[0]
                 descriptor = self.__read_data_descriptor()
                 descriptors.append({'descriptor': descriptor, 'name_index': name_index})
-                continue
             else:
                 raise XmlUnpackerError('Failed to read element descriptors')
         return descriptors

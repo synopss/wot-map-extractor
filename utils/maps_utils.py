@@ -53,10 +53,18 @@ def load_maps_dictionary():
         map_id = as_int(node.find('id').text)
         map_name = node.find('name').text.strip()
         map_l10n_name = _a(map_name)
-        if not map_l10n_name.startswith('100'):  # remove test conf files
+        if not is_test_map(map_l10n_name) and not is_halloween_2022_map(map_name):
             maps_list.append((map_id, map_name, map_l10n_name))
 
     return maps_list
+
+
+def is_test_map(map_l10n_name):
+    return map_l10n_name.startswith('100')
+
+
+def is_halloween_2022_map(map_name):
+    return map_name.endswith('_hw22')
 
 
 def find_file_handle(zfile, package_file):

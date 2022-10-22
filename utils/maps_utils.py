@@ -26,8 +26,30 @@ def init():
     arenas_mo_gettext = gettext.GNUTranslations(open(arenas_mo_path, 'rb'))
 
 
-def load_maps_dictionary():
+def load_maps_dictionary(map_name=''):
     init()
+    list_nodes = get_list_nodes()
+    maps_list = []
+
+    if map_name != '':
+        for node in list_nodes.findall('map'):
+            if node.find('id') is None or node.find('name') is None:
+                break
+
+            if node.find('name').text == map_name:
+                maps_list = get_map_list(node, maps_list)
+                break
+    else:
+        for node in list_nodes.findall('map'):
+            if node.find('id') is None or node.find('name') is None:
+                break
+
+            maps_list = get_map_list(node, maps_list)
+
+    return maps_list
+
+
+def get_list_nodes():
     package_file = 'scripts.pkg'
     package = os.path.join(settings.WOT_PATH_DEFAULT, 'res', 'packages', package_file)
 
@@ -45,17 +67,15 @@ def load_maps_dictionary():
         xmlr = XmlUnpacker()
         list_nodes = xmlr.read(f)
 
-    maps_list = []
-    for node in list_nodes.findall('map'):
-        if node.find('id') is None or node.find('name') is None:
-            return
+    return list_nodes
 
-        map_id = as_int(node.find('id').text)
-        map_name = node.find('name').text.strip()
-        map_l10n_name = _a(map_name)
-        if not is_test_map(map_l10n_name) and not is_halloween_2022_map(map_name):
-            maps_list.append((map_id, map_name, map_l10n_name))
 
+def get_map_list(node, maps_list):
+    map_id = as_int(node.find('id').text)
+    map_name = node.find('name').text.strip()
+    map_l10n_name = _a(map_name)
+    if not is_test_map(map_l10n_name) and not is_halloween_2022_map(map_name):
+        maps_list.append((map_id, map_name, map_l10n_name))
     return maps_list
 
 

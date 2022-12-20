@@ -3,7 +3,8 @@ import zipfile
 
 from PIL import Image
 
-from settings import WOT_PATH_DEFAULT, STANDARD_BATTLE, ENCOUNTER_BATTLE, ASSAULT, ATT_DEF, GRAND_BATTLE, DEST_DIR
+from settings import WOT_PATH_DEFAULT, STANDARD_BATTLE, ENCOUNTER_BATTLE, ASSAULT, ATT_DEF, GRAND_BATTLE, DEST_DIR, \
+    ONSLAUGHT
 from utils.string_utils import as_snake_case
 
 
@@ -48,6 +49,7 @@ class MapImageCreator:
         self.__handle_game_mode(ASSAULT)
         self.__handle_game_mode(ATT_DEF)
         self.__handle_game_mode(GRAND_BATTLE)
+        self.__handle_game_mode(ONSLAUGHT)
         if '-f' in self.argv:
             self.__handle_cover()
 
@@ -68,7 +70,7 @@ class MapImageCreator:
         if not os.path.exists(map_dir):
             return
         with zipfile.ZipFile(map_dir, 'r') as map_ref:
-            self.map_image = self.__get_cap_image(map_ref)
+            self.map_image = self.__get_cap_image(map_ref, game_mode)
 
             self.__paste_point_on_map('green_cap', green_cap_coord, self.__cap_image_size, self.__cap_offset)
             self.__paste_point_on_map('red_cap', red_cap_coord, self.__cap_image_size, self.__cap_offset)
@@ -113,8 +115,11 @@ class MapImageCreator:
             return f'{path}\\{game_mode}.png'
         return f'settings.DEST_DIR\\{as_snake_case(self.map_name)}_{game_mode}.png'
 
-    def __get_cap_image(self, map_ref):
-        path = f'spaces/{self.map_code}/mmap.dds'
+    def __get_cap_image(self, map_ref, game_mode=''):
+        if game_mode == ONSLAUGHT and f'spaces/{self.map_code}/mmap_comp7.dds' in map_ref.namelist():
+            path = f'spaces/{self.map_code}/mmap_comp7.dds'
+        else:
+            path = f'spaces/{self.map_code}/mmap.dds'
         img_bytes = map_ref.open(path)
         return Image.open(img_bytes)
 

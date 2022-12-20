@@ -3,7 +3,8 @@ import zipfile
 
 from XmlUnpacker import XmlUnpacker
 from settings import STANDARD_BATTLE, WOT_PATH_DEFAULT, STANDARD_BATTLE_CODE, ENCOUNTER_BATTLE_CODE, ENCOUNTER_BATTLE, \
-    ASSAULT_CODE, ASSAULT, ATT_DEF, ATT_DEF_CODE, GRAND_BATTLE, GRAND_BATTLE_CODE, get_game_mode
+    ASSAULT_CODE, ASSAULT, ATT_DEF, ATT_DEF_CODE, GRAND_BATTLE, GRAND_BATTLE_CODE, get_game_mode, ONSLAUGHT, \
+    ONSLAUGHT_CODE
 
 
 class MapInfoCreator:
@@ -25,6 +26,7 @@ class MapInfoCreator:
                 self.__extract_assault(nodes)
                 self.__extract_att_def(nodes)
                 self.__extract_30v30(nodes)
+                self.__extract_onslaught(nodes)
             return self.map_info
 
     def __extract_map_size(self, nodes):
@@ -78,6 +80,15 @@ class MapInfoCreator:
             self.__extract_point(nodes, GRAND_BATTLE_CODE, 'spawn', 'green_spawn')
             self.__extract_point(nodes, GRAND_BATTLE_CODE, 'spawn', 'red_spawn')
 
+    def __extract_onslaught(self, nodes):
+        if ONSLAUGHT in self.map_info:
+            del self.map_info[ONSLAUGHT]
+        if nodes.find('gameplayTypes').find(ONSLAUGHT_CODE) is not None:
+            self.map_info[ONSLAUGHT] = {}
+            self.__extract_point(nodes, ONSLAUGHT_CODE, 'spawn', 'green_spawn')
+            self.__extract_point(nodes, ONSLAUGHT_CODE, 'spawn', 'red_spawn')
+            self.__extract_point(nodes, ONSLAUGHT_CODE, 'cap_point', 'cap_point')
+
     def __extract_point(self, nodes, game_mode, point_type, point_team):
         if point_team.startswith('green'):
             coordinates = self.__get_coordinates(nodes, 'team1', game_mode, point_type)
@@ -99,7 +110,8 @@ class MapInfoCreator:
         self.__set_game_mode_coordinates_node(game_mode, ASSAULT_CODE, point_type, nodes)
         self.__set_game_mode_coordinates_node(game_mode, ATT_DEF_CODE, point_type, nodes)
         self.__set_game_mode_coordinates_node(game_mode, GRAND_BATTLE_CODE, point_type, nodes)
-        if game_mode == 'domination':
+        self.__set_game_mode_coordinates_node(game_mode, ONSLAUGHT_CODE, point_type, nodes)
+        if game_mode == ENCOUNTER_BATTLE_CODE or game_mode == ONSLAUGHT_CODE:
             if point_type == 'spawn':
                 self.__team_base_position_node = nodes.find('gameplayTypes').find(game_mode).find('teamSpawnPoints')
             elif point_type == 'cap_point':

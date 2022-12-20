@@ -69,3 +69,4 @@ Will create an extra json file with this format:
 - Grand Battle
 - Frontline
 - Steel Hunter
+- Onslaught

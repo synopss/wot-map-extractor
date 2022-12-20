@@ -3,7 +3,7 @@ import sys
 
 from MapImageCreator import MapImageCreator
 from MapInfoCreator import MapInfoCreator
-from settings import DEST_DIR, STANDARD_BATTLE, ENCOUNTER_BATTLE, ASSAULT, ATT_DEF, GRAND_BATTLE
+from settings import DEST_DIR, STANDARD_BATTLE, ENCOUNTER_BATTLE, ASSAULT, ATT_DEF, GRAND_BATTLE, ONSLAUGHT
 from utils.maps_utils import load_maps_dictionary
 from utils.string_utils import as_snake_case
 
@@ -38,6 +38,8 @@ def get_json(map_name, map_info):
         data['views'].append({'name': 'Attack / Defense', 'url': f'./{as_snake_case(map_name)}/{ATT_DEF}.png'})
     if GRAND_BATTLE in map_info:
         data['views'].append({'name': 'Grand Battle', 'url': f'./{as_snake_case(map_name)}/{GRAND_BATTLE}.png'})
+    if ONSLAUGHT in map_info:
+        data['views'].append({'name': 'Onslaught', 'url': f'./{as_snake_case(map_name)}/{ONSLAUGHT}.png'})
     if not data['views']:
         data['views'].append({'name': 'Frontline', 'url': f'./{as_snake_case(map_name)}/cover.png'})
     return data

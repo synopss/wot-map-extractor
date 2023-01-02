@@ -15,15 +15,15 @@ def main(argv):
         map_l10n_name = wot_map[2]
         map_info = MapInfoCreator().extract(map_code)
         MapImageCreator(map_code, map_l10n_name, map_info, argv).create_map()
-        json_string.append(get_json(map_l10n_name, map_info))
+        json_string.append(get_json(map_l10n_name, map_info, map_code))
 
     if '-j' in argv and '-f' in argv:
         with open(f'{DEST_DIR}\\output.json', 'w') as outfile:
             json.dump(json_string, outfile, indent=4)
 
 
-def get_json(map_name, map_info):
-    data = {'name': map_name, 'description': map_name, 'cover': f'./{as_snake_case(map_name)}/cover.png',
+def get_json(map_name, map_info, map_code):
+    data = {'name': map_name, 'description': map_name, 'code': map_code, 'cover': f'./{as_snake_case(map_name)}/cover.png',
             'size': map_info['upper_right'][0] - map_info['bottom_left'][0], 'views': []}
     if STANDARD_BATTLE in map_info:
         if len(map_info[STANDARD_BATTLE]) == 0:

@@ -29,3 +29,10 @@ def get_game_mode(code):
         return GRAND_BATTLE
     if code == ONSLAUGHT_CODE:
         return ONSLAUGHT
+
+
+def get_event_type(code):
+    if code == 'airstrike':
+        return '1'
+    if code == 'comms':
+        return '2'

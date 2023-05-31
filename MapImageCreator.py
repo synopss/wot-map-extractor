@@ -60,13 +60,15 @@ class MapImageCreator:
             green_spawn_coord = self.__get_cap_coordinates(game_mode, 'green_spawn')
             red_spawn_coord = self.__get_cap_coordinates(game_mode, 'red_spawn')
             cap_point_coord = self.__get_cap_coordinates(game_mode, 'cap_point')
+            airstrike_point_coord = self.__get_cap_coordinates(game_mode, 'airstrike')
+            comms_point_coord = self.__get_cap_coordinates(game_mode, 'comms')
             map_dir = self.__get_map_dir()
 
             self.__create_image(map_dir, game_mode, green_cap_coord, red_cap_coord, green_spawn_coord, red_spawn_coord,
-                                cap_point_coord)
+                                cap_point_coord, airstrike_point_coord, comms_point_coord)
 
     def __create_image(self, map_dir, game_mode, green_cap_coord, red_cap_coord, green_spawn_coord, red_spawn_coord,
-                       cap_point_coord):
+                       cap_point_coord, airstrike_point_coord, comms_point_coord):
         if not os.path.exists(map_dir):
             return
         with zipfile.ZipFile(map_dir, 'r') as map_ref:
@@ -77,6 +79,8 @@ class MapImageCreator:
             self.__paste_point_on_map('green_spawn', green_spawn_coord, self.__spawn_image_size, self.__spawn_offset)
             self.__paste_point_on_map('red_spawn', red_spawn_coord, self.__spawn_image_size, self.__spawn_offset)
             self.__paste_point_on_map('encounter_cap', cap_point_coord, self.__cap_image_size, self.__cap_offset)
+            self.__paste_point_on_map('airstrike', airstrike_point_coord, self.__spawn_image_size, self.__spawn_offset)
+            self.__paste_point_on_map('comms', comms_point_coord, self.__spawn_image_size, self.__spawn_offset)
 
             self.map_image.save(self.__get_saving_path(game_mode), format='PNG', quality=95)
 

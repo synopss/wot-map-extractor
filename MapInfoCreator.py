@@ -132,15 +132,15 @@ class MapInfoCreator:
             team_node = self.__team_spawn_position_node.find(team)
             if team_node is not None:
                 self.__coordinates = []
-                self.__append_coordinates(team_node, 'position')
-                self.__append_coordinates(team_node, 'position1')
-                self.__append_coordinates(team_node, 'position2')
+                self.__append_coordinates(team_node, 'position', game_mode)
+                self.__append_coordinates(team_node, 'position1', game_mode)
+                self.__append_coordinates(team_node, 'position2', game_mode)
                 return self.__coordinates
         if self.__event_position_node is not None:
             event_node = self.__event_position_node.findall('point')
             if event_node is not None:
                 self.__coordinates = []
-                self.__append_coordinates(event_node, 'point', team)
+                self.__append_coordinates(event_node, 'point', game_mode, team)
                 return self.__coordinates
         return None
 
@@ -155,8 +155,8 @@ class MapInfoCreator:
             else:
                 self.__team_spawn_position_node = None
 
-    def __append_coordinates(self, node, point_name, data=None):
-        if len(node) > 1:
+    def __append_coordinates(self, node, point_name, game_mode, data=None):
+        if game_mode == ONSLAUGHT_CODE and len(node) > 1:
             for node_item in node:
                 if node_item.find('position') is not None and node_item.find('type').text == get_event_type(data):
                     self.__coordinates.append(self.__as_parsed_coordinates(node_item.find('position')))

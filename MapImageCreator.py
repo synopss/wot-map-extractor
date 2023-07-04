@@ -90,13 +90,13 @@ class MapImageCreator:
                 for index, coord in enumerate(coordinates):
                     cap_number = ('' if index == 0 else '2') if asset_name == 'green_cap' else ''
                     point = Image.open(f'assets/{asset_name}{cap_number}.png', 'r')
-                    point = point.resize((point_image_size, point_image_size), Image.ANTIALIAS)
+                    point = point.resize((point_image_size, point_image_size), Image.LANCZOS)
                     point_position = self.__get_point_position(coord[0], coord[1], point_image_offset)
                     self.map_image.paste(point, point_position, point)
         else:
             if coordinates is not None:
                 point = Image.open(f'assets/{asset_name}.png', 'r')
-                point = point.resize((point_image_size, point_image_size), Image.ANTIALIAS)
+                point = point.resize((point_image_size, point_image_size), Image.LANCZOS)
                 point_position = self.__get_point_position(coordinates[0], coordinates[1], point_image_offset)
                 self.map_image.paste(point, point_position, point)
 

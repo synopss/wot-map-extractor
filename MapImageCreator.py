@@ -19,29 +19,41 @@ class MapImageCreator:
     map_code = None
     map_name = None
 
-    __bottom_left: None
-    __height: None
-    __width: None
-
     __cap_image_size = None
     __spawn_image_size = None
+
+    __spawn_offset = None
+    __cap_offset = None
 
     argv = []
 
     def __init__(self, map_code, map_name, map_info, argv):
-        upper_right = map_info['upper_right']
-        bottom_left = map_info['bottom_left']
         self.map_info = map_info
-        self.__bottom_left = bottom_left
-        self.__height = upper_right[1] - bottom_left[1]
-        self.__width = upper_right[0] - bottom_left[0]
         self.map_code = map_code
         self.map_name = map_name
         self.argv = argv
+        self.set_bounding_box_by_game_mode()
         self.__cap_image_size = self.__get_cap_image_size()
         self.__cap_offset = round(self.__cap_image_size / 2)
         self.__spawn_image_size = self.__get_spawn_image_size()
         self.__spawn_offset = round(self.__spawn_image_size / 2)
+
+    def height(self):
+        return self.__upper_right[1] - self.__bottom_left[1]
+
+    def width(self):
+        return self.__upper_right[0] - self.__bottom_left[0]
+
+    def set_bounding_box(self, upper_right, bottom_left):
+        self.__upper_right = upper_right
+        self.__bottom_left = bottom_left
+
+    def set_bounding_box_by_game_mode(self, game_mode=None):
+        if (game_mode == ONSLAUGHT and self.map_info.get('onslaught_upper_right')
+                and self.map_info.get('onslaught_bottom_left')):
+            self.set_bounding_box(self.map_info['onslaught_upper_right'], self.map_info['onslaught_bottom_left'])
+        else:
+            self.set_bounding_box(self.map_info['upper_right'], self.map_info['bottom_left'])
 
     def create_map(self):
         self.__handle_game_mode(STANDARD_BATTLE)
@@ -55,6 +67,7 @@ class MapImageCreator:
 
     def __handle_game_mode(self, game_mode):
         if game_mode in self.map_info and len(self.map_info[game_mode]) != 0:
+            self.set_bounding_box_by_game_mode(game_mode)
             green_cap_coord = self.__get_cap_coordinates(game_mode, 'green_cap')
             red_cap_coord = self.__get_cap_coordinates(game_mode, 'red_cap')
             green_spawn_coord = self.__get_cap_coordinates(game_mode, 'green_spawn')
@@ -128,10 +141,10 @@ class MapImageCreator:
         return Image.open(img_bytes)
 
     def __get_cap_image_size(self):
-        return round(self.MAP_IMAGE_SIZE / self.__height * self.STANDARD_CAP_SIZE)
+        return round(self.MAP_IMAGE_SIZE / self.height() * self.STANDARD_CAP_SIZE)
 
     def __get_spawn_image_size(self):
-        return round(self.MAP_IMAGE_SIZE / self.__height * self.STANDARD_SPAWN_SIZE)
+        return round(self.MAP_IMAGE_SIZE / self.height() * self.STANDARD_SPAWN_SIZE)
 
     def __get_cap_coordinates(self, game_mode, team_cap):
         if game_mode in self.map_info and team_cap in self.map_info[game_mode]:
@@ -139,8 +152,8 @@ class MapImageCreator:
         return None
 
     def __get_point_position(self, x, y, cap_offset):
-        new_x = ((x - self.__bottom_left[0]) / self.__width) * self.MAP_IMAGE_SIZE - cap_offset
-        new_y = (1 - ((y - self.__bottom_left[1]) / self.__height)) * self.MAP_IMAGE_SIZE - cap_offset
+        new_x = ((x - self.__bottom_left[0]) / self.width()) * self.MAP_IMAGE_SIZE - cap_offset
+        new_y = (1 - ((y - self.__bottom_left[1]) / self.height())) * self.MAP_IMAGE_SIZE - cap_offset
         return round(new_x), round(new_y)
 
     def __get_map_dir(self):

@@ -30,7 +30,11 @@ class MapInfoCreator:
                 self.__extract_onslaught(nodes)
             return self.map_info
 
-    def __extract_map_size(self, nodes):
+    def __extract_map_size(self, nodes, has_custom_onslaught_size=False):
+        if has_custom_onslaught_size:
+            self.map_info['onslaught_upper_right'] = self.get_upper_right(nodes)
+            self.map_info['onslaught_bottom_left'] = self.get_bottom_left(nodes)
+            return
         self.map_info['upper_right'] = self.get_upper_right(nodes)
         self.map_info['bottom_left'] = self.get_bottom_left(nodes)
 
@@ -86,6 +90,10 @@ class MapInfoCreator:
             del self.map_info[ONSLAUGHT]
         if nodes.find('gameplayTypes').find(ONSLAUGHT_CODE) is not None:
             self.map_info[ONSLAUGHT] = {}
+            onslaught_nodes = nodes.find('gameplayTypes').find(ONSLAUGHT_CODE)
+            has_custom_onslaught_size = onslaught_nodes.find('boundingBox')
+            if has_custom_onslaught_size:
+                self.__extract_map_size(onslaught_nodes, has_custom_onslaught_size)
             self.__extract_point(nodes, ONSLAUGHT_CODE, 'spawn', 'green_spawn')
             self.__extract_point(nodes, ONSLAUGHT_CODE, 'spawn', 'red_spawn')
             self.__extract_point(nodes, ONSLAUGHT_CODE, 'cap_point', 'cap_point')

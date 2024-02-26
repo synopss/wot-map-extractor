@@ -33,10 +33,6 @@ class MapImageCreator:
         self.map_name = map_name
         self.argv = argv
         self.set_bounding_box_by_game_mode()
-        self.__cap_image_size = self.__get_cap_image_size()
-        self.__cap_offset = round(self.__cap_image_size / 2)
-        self.__spawn_image_size = self.__get_spawn_image_size()
-        self.__spawn_offset = round(self.__spawn_image_size / 2)
 
     def height(self):
         return self.__upper_right[1] - self.__bottom_left[1]
@@ -54,6 +50,10 @@ class MapImageCreator:
             self.set_bounding_box(self.map_info['onslaught_upper_right'], self.map_info['onslaught_bottom_left'])
         else:
             self.set_bounding_box(self.map_info['upper_right'], self.map_info['bottom_left'])
+        self.__cap_image_size = self.__get_cap_image_size()
+        self.__spawn_image_size = self.__get_spawn_image_size()
+        self.__cap_offset = round(self.__cap_image_size / 2)
+        self.__spawn_offset = round(self.__spawn_image_size / 2)
 
     def create_map(self):
         self.__handle_game_mode(STANDARD_BATTLE)

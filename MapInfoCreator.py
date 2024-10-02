@@ -35,6 +35,9 @@ class MapInfoCreator:
             self.map_info['onslaught_upper_right'] = self.get_upper_right(nodes)
             self.map_info['onslaught_bottom_left'] = self.get_bottom_left(nodes)
             return
+        else:
+            self.map_info.pop('onslaught_upper_right', None)
+            self.map_info.pop('onslaught_bottom_left', None)
         self.map_info['upper_right'] = self.get_upper_right(nodes)
         self.map_info['bottom_left'] = self.get_bottom_left(nodes)
 

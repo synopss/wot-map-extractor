@@ -130,7 +130,7 @@ class MapImageCreator:
             if game_mode is None:
                 return f'{path}\\cover.png'
             return f'{path}\\{game_mode}.png'
-        return f'settings.DEST_DIR\\{as_snake_case(self.map_name)}_{game_mode}.png'
+        return f'{DEST_DIR}\\{as_snake_case(self.map_name)}_{game_mode}.png'
 
     def __get_cap_image(self, map_ref, game_mode=''):
         if game_mode == ONSLAUGHT and f'spaces/{self.map_code}/mmap_comp7.dds' in map_ref.namelist():
